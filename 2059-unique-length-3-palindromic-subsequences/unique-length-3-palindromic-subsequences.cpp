@@ -1,32 +1,33 @@
 class Solution {
 public:
     int countPalindromicSubsequence(string s) {
-        int ans = 0;
-        int n = s.length();
-        
-        unordered_map<char, pair<int, int>> M;
-        
+        int n = s.size();
+        vector<int> first(26, n), last(26, -1);
+
+        // find first & last
         for (int i = 0; i < n; i++) {
-            if (M.find(s[i]) == M.end()) {
-                M[s[i]].first = i;
-            }
-            M[s[i]].second = i;
+            int c = s[i] - 'a';
+            first[c] = min(first[c], i);
+            last[c] = i;
         }
-        
-        for (auto& [ch, positions] : M) {
-            int left = positions.first;
-            int right = positions.second;
-            
-            if (right - left <= 1) continue;  // No valid subsequences in this range
-            
-            unordered_set<char> uniqueChars;
-            for (int i = left + 1; i < right; i++) {
-                uniqueChars.insert(s[i]);
+
+        int res = 0;
+
+        for (int c = 0; c < 26; c++) {
+            int L = first[c], R = last[c];
+            if (R - L < 2) continue;
+
+            bool seen[26] = {0};
+
+            for (int i = L + 1; i < R; i++) {
+                int idx = s[i] - 'a';
+                if (!seen[idx]) {
+                    seen[idx] = true;
+                    res++;
+                }
             }
-            
-            ans += uniqueChars.size();  // Count the unique characters between first and last occurrence
         }
-        
-        return ans;
+
+        return res;
     }
 };
