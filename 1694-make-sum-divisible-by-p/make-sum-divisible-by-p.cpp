@@ -1,36 +1,47 @@
-#include <vector>
-#include <unordered_map>
-using namespace std;
-
 class Solution {
 public:
     int minSubarray(vector<int>& nums, int p) {
-        long totalSum = 0;
+        // Calculate total sum and remainder
+        long long total = 0;
         for (int num : nums) {
-            totalSum += num;
+            total += num;
         }
-
-        // Find the remainder when total sum is divided by p
-        int rem = totalSum % p;
-        if (rem == 0) return 0; // If the remainder is 0, no subarray needs to be removed
-
-        unordered_map<int, int> prefixMod;
-        prefixMod[0] = -1;  // Initialize for handling full prefix
-        long prefixSum = 0;
-        int minLength = nums.size();
-
-        for (int i = 0; i < nums.size(); ++i) {
+        
+        int remainder = total % p;
+        
+        // If already divisible, return 0
+        if (remainder == 0) {
+            return 0;
+        }
+        
+        // We need to find a subarray with sum % p == remainder
+        // Use prefix sum technique
+        unordered_map<int, int> lastSeen; // remainder -> last index
+        lastSeen[0] = -1; // Base case: prefix sum 0 at index -1
+        
+        long long prefixSum = 0;
+        int minLen = INT_MAX;
+        
+        for (int i = 0; i < nums.size(); i++) {
             prefixSum += nums[i];
-            int currentMod = prefixSum % p;
-            int targetMod = (currentMod - rem + p) % p;
-
-            if (prefixMod.find(targetMod) != prefixMod.end()) {
-                minLength = min(minLength, i - prefixMod[targetMod]);
+            int currRemainder = prefixSum % p;
+            
+            // We need to find: (prefixSum - subarray) % p == 0
+            // Which means: subarray % p == prefixSum % p
+            // We're looking for a prefix with remainder == (currRemainder - remainder + p) % p
+            int targetRemainder = (currRemainder - remainder + p) % p;
+            
+            if (lastSeen.find(targetRemainder) != lastSeen.end()) {
+                int subarrayLen = i - lastSeen[targetRemainder];
+                // Make sure we don't remove the whole array
+                if (subarrayLen < (int)nums.size()) {
+                    minLen = min(minLen, subarrayLen);
+                }
             }
-
-            prefixMod[currentMod] = i;
+            
+            lastSeen[currRemainder] = i;
         }
-
-        return minLength == nums.size() ? -1 : minLength;
+        
+        return minLen == INT_MAX ? -1 : minLen;
     }
 };
