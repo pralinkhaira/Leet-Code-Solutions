@@ -1,20 +1,22 @@
 class Solution {
 public:
-    static const int MOD = 1000000007;
-
-    int countPermutations(vector<int>& complexity) {
-        int n = complexity.size();
+int countPermutations(vector<int>& complexity) {
+        const int MOD = 1000000007;
+        
+        // Check if complexity[0] is the unique minimum
         int first = complexity[0];
-
-        for (int i = 1; i < n; i++) {
-            if (complexity[i] <= first) return 0;
+        for (int i = 1; i < complexity.size(); i++) {
+            if (complexity[i] <= first) {
+                return 0;
+            }
         }
-
-        long long fact = 1;
-        for (int i = 2; i < n; i++) {
-            fact = (fact * i) % MOD;
+        
+        // Calculate (n-1)! modulo MOD
+        long long result = 1;
+        for (int i = 2; i < complexity.size(); i++) {
+            result = (result * i) % MOD;
         }
-
-        return (int)fact;
+        
+        return (int)result;        
     }
 };
