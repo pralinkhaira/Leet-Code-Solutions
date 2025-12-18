@@ -9,25 +9,33 @@
  *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
  * };
  */
-void solve(TreeNode* root, TreeNode*& prev, TreeNode*& fv, TreeNode*& sv) {
-    if (!root)
-        return;
-    solve(root->left, prev, fv, sv);
-    if (prev && prev->val>root->val){
-        if(!fv)
-            fv=prev;
-        sv=root;
-    }  
-    prev = root;
-    solve(root->right, prev, fv,sv);
-}
 class Solution {
+private:
+    TreeNode* first = nullptr;
+    TreeNode* second = nullptr;
+    TreeNode* prev = nullptr;
+    
+    void inorder(TreeNode* root) {
+        if (!root) return;
+        
+        inorder(root->left);
+        
+        if (prev && prev->val > root->val) {
+            if (!first) {
+                first = prev;
+                second = root;
+            } else {
+                second = root;
+            }
+        }
+        prev = root;
+        
+        inorder(root->right);
+    }
+    
 public:
     void recoverTree(TreeNode* root) {
-        TreeNode* prev = nullptr;
-        TreeNode* fv = nullptr;
-        TreeNode* sv = nullptr;
-        solve(root, prev, fv, sv);
-        swap(fv->val,sv->val);
+        inorder(root);
+        swap(first->val, second->val);
     }
 };
