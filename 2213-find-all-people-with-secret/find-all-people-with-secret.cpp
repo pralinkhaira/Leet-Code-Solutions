@@ -1,51 +1,105 @@
 class Solution {
-public:
-    std::vector<int> findAllPeople(int n, std::vector<std::vector<int>>& meetings, int firstPerson) {
-        std::set<int> knownSet = {0, firstPerson};
+private:
+    vector<int> parent;
+    
+    int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]);
+        }
+        return parent[x];
+    }
+    
+    void unite(int x, int y) {
+        int px = find(x);
+        int py = find(y);
         
-        std::vector<std::vector<std::pair<int, int>>> sortedMeetings;
-        std::sort(meetings.begin(), meetings.end(), [](const std::vector<int>& a, const std::vector<int>& b) {
+        if (px != py) {
+            parent[px] = py;
+        }
+    }
+    
+public:
+    vector<int> findAllPeople(int n, vector<vector<int>>& meetings, int firstPerson) {
+        parent.resize(n);
+        
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+        
+        // Unite person 0 and firstPerson
+        unite(0, firstPerson);
+        
+        // Sort meetings by time
+        sort(meetings.begin(), meetings.end(), [](const vector<int>& a, const vector<int>& b) {
             return a[2] < b[2];
         });
-
-        std::set<int> seenTime;
         
-        for (const auto& meeting : meetings) {
-            if (seenTime.find(meeting[2]) == seenTime.end()) {
-                seenTime.insert(meeting[2]);
-                sortedMeetings.push_back({});
-            }
-            sortedMeetings.back().push_back({meeting[0], meeting[1]});
-        }
-
-        for (const auto& meetingGroup : sortedMeetings) {
-            std::set<int> peopleKnowSecret;
-            std::unordered_map<int, std::vector<int>> graph;
+        int i = 0;
+        while (i < meetings.size()) {
+            int currentTime = meetings[i][2];
+            set<int> peopleAtTime;
+            map<int, set<int>> graph;
             
-            for (const auto& pair : meetingGroup) {
-                graph[pair.first].push_back(pair.second);
-                graph[pair.second].push_back(pair.first);
+            // Build graph of meetings at this time
+            while (i < meetings.size() && meetings[i][2] == currentTime) {
+                int x = meetings[i][0];
+                int y = meetings[i][1];
+                graph[x].insert(y);
+                graph[y].insert(x);
+                peopleAtTime.insert(x);
+                peopleAtTime.insert(y);
+                i++;
+            }
+            
+            // For each connected component in the graph, check if anyone knows the secret
+            set<int> visited;
+            for (int start : peopleAtTime) {
+                if (visited.count(start)) continue;
                 
-                if (knownSet.find(pair.first) != knownSet.end()) peopleKnowSecret.insert(pair.first);
-                if (knownSet.find(pair.second) != knownSet.end()) peopleKnowSecret.insert(pair.second);
-            }
-            
-            std::queue<int> queue;
-            for (int person : peopleKnowSecret) queue.push(person);
-        
-            while (!queue.empty()) {
-                int curr = queue.front();
-                queue.pop();
-                knownSet.insert(curr);
-                for (int neigh : graph[curr]) {
-                    if (knownSet.find(neigh) == knownSet.end()) {
-                        knownSet.insert(neigh);
-                        queue.push(neigh);
+                // BFS to find connected component
+                vector<int> component;
+                queue<int> q;
+                q.push(start);
+                visited.insert(start);
+                
+                while (!q.empty()) {
+                    int u = q.front();
+                    q.pop();
+                    component.push_back(u);
+                    
+                    for (int v : graph[u]) {
+                        if (!visited.count(v)) {
+                            visited.insert(v);
+                            q.push(v);
+                        }
+                    }
+                }
+                
+                // Check if any person in component knows secret
+                bool anyKnows = false;
+                for (int person : component) {
+                    if (find(person) == find(0)) {
+                        anyKnows = true;
+                        break;
+                    }
+                }
+                
+                // If yes, unite all in component
+                if (anyKnows) {
+                    for (int j = 1; j < component.size(); j++) {
+                        unite(component[0], component[j]);
                     }
                 }
             }
         }
-
-        return std::vector<int>(knownSet.begin(), knownSet.end());
+        
+        vector<int> result;
+        for (int i = 0; i < n; i++) {
+            if (find(i) == find(0)) {
+                result.push_back(i);
+            }
+        }
+        
+        return result;
     }
 };
