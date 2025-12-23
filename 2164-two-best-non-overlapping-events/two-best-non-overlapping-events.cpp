@@ -1,42 +1,45 @@
 class Solution {
 public:
     int maxTwoEvents(vector<vector<int>>& events) {
-        int n = events.size();
-        
         sort(events.begin(), events.end(), [](const vector<int>& a, const vector<int>& b) {
-            return a[0] < b[0];
+            return a[1] < b[1];
         });
         
-        vector<int> suffixMax(n);
-        suffixMax[n - 1] = events[n - 1][2];
+        int n = events.size();
+        // dp[i][j] = max value using first i events with at most j events selected
+        vector<vector<int>> dp(n + 1, vector<int>(3, 0));
         
-        for (int i = n - 2; i >= 0; --i) {
-            suffixMax[i] = max(events[i][2], suffixMax[i + 1]);
-        }
-        
-        int maxSum = 0;
-        
-        for (int i = 0; i < n; ++i) {
-            int left = i + 1, right = n - 1;
-            int nextEventIndex = -1;
-            
-            while (left <= right) {
-                int mid = left + (right - left) / 2;
-                if (events[mid][0] > events[i][1]) {
-                    nextEventIndex = mid;
-                    right = mid - 1;
-                } else {
-                    left = mid + 1;
+        for (int i = 1; i <= n; i++) {
+            for (int j = 0; j <= 2; j++) {
+                // Option 1: Don't take event i-1
+                dp[i][j] = dp[i-1][j];
+                
+                if (j > 0) {
+                    int val = events[i-1][2];
+                    
+                    // Find the latest event that ends before current event starts
+                    int left = 0, right = i - 2;
+                    int idx = -1;
+                    
+                    while (left <= right) {
+                        int mid = (left + right) / 2;
+                        if (events[mid][1] < events[i-1][0]) {
+                            idx = mid;
+                            left = mid + 1;
+                        } else {
+                            right = mid - 1;
+                        }
+                    }
+                    
+                    if (idx != -1) {
+                        dp[i][j] = max(dp[i][j], val + dp[idx + 1][j - 1]);
+                    } else {
+                        dp[i][j] = max(dp[i][j], val);
+                    }
                 }
             }
-            
-            if (nextEventIndex != -1) {
-                maxSum = max(maxSum, events[i][2] + suffixMax[nextEventIndex]);
-            }
-            
-            maxSum = max(maxSum, events[i][2]);
         }
         
-        return maxSum;
+        return dp[n][2];
     }
 };
