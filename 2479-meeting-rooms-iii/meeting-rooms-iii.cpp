@@ -1,43 +1,47 @@
 class Solution {
 public:
+    int getMaxi(vector<long long> &vis, int &n){
+        int maxi = 0, maxiIDX = 0;
+        for(int i=0; i<n; i++){
+            if(vis[i] > maxi){
+                maxi = vis[i]; maxiIDX = i;
+            }
+        }
+        return maxiIDX;
+    }
+
     int mostBooked(int n, vector<vector<int>>& meetings) {
-        vector<long long> busy(n, 0); // Room end times
-        vector<int> count(n, 0);      // Booking counts per room
-
         sort(meetings.begin(), meetings.end());
+        vector<long long> rooms(n, 0), vis(n, 0);
 
-        for (auto& meeting : meetings) {
-            int start = meeting[0], end = meeting[1];
-            long long earliest = LLONG_MAX;
-            int roomIndex = -1;
-            bool assigned = false;
+        for(auto &meet : meetings){
+            int start = meet[0], end = meet[1];
+            bool flag = false;
+            long long mini = LLONG_MAX, miniIdx = 0;
 
-            for (int i = 0; i < n; ++i) {
-                if (busy[i] < earliest) {
-                    earliest = busy[i];
-                    roomIndex = i;
-                }
-                if (busy[i] <= start) {
-                    busy[i] = end;
-                    count[i]++;
-                    assigned = true;
+            for(int i=0; i<n; i++){
+                if(rooms[i] <= start){
+                    rooms[i] = end;
+                    vis[i]++;
+                    flag = true;
                     break;
                 }
+
+                if(rooms[i] < mini){
+                    mini = rooms[i];
+                    miniIdx = i;
+                }
             }
 
-            if (!assigned) {
-                busy[roomIndex] += (end - start);
-                count[roomIndex]++;
+            // If all rooms are occupied for current meet
+            if(flag == false){
+                rooms[miniIdx] += end - start;
+                vis[miniIdx]++;
             }
         }
 
-        int res = 0, maxCount = 0;
-        for (int i = 0; i < n; ++i) {
-            if (count[i] > maxCount) {
-                maxCount = count[i];
-                res = i;
-            }
-        }
-        return res;
+        // Get room having highest meetings
+        int ans = getMaxi(vis, n);
+        return ans;
     }
 };
