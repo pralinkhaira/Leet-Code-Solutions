@@ -1,22 +1,25 @@
 class Solution {
 public:
     long long maxMatrixSum(vector<vector<int>>& matrix) {
-        int minValue = INT_MAX;
         long long sum = 0;
         int negCount = 0;
-
-        for (int i = 0; i < matrix.size(); i++) {
-            for (int j = 0; j < matrix[0].size(); j++) {
-                if (matrix[i][j] < 0)
-                    negCount++;
-                int absValue = abs(matrix[i][j]);
-                minValue = min(minValue, absValue);
-                sum += absValue;
+        int minAbs = INT_MAX;
+        
+        // Traverse the matrix
+        for(auto& row : matrix) {
+            for(int num : row) {
+                sum += abs(num);
+                if(num < 0) negCount++;
+                minAbs = min(minAbs, abs(num));
             }
         }
-
-        if (negCount % 2 == 0)
-            return sum;
-        return sum - 2 * minValue;
+        
+        // If odd number of negatives, we have to keep one negative
+        // So we subtract twice the smallest absolute value
+        if(negCount % 2 == 1) {
+            sum -= 2LL * minAbs;
+        }
+        
+        return sum;
     }
 };
