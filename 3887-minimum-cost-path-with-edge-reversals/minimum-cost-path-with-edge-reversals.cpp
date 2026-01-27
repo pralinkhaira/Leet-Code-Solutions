@@ -1,55 +1,76 @@
 class Solution {
 public:
     struct Edge {
-        int to;
-        int cost;
+        int to, cost;
     };
 
     struct Node {
-        int dist;
-        int v;
-        bool operator>(const Node& other) const {
-            return dist > other.dist;
+        int d, v;
+        bool operator>(const Node& o) const {
+            return d > o.d;
         }
     };
 
     int minCost(int n, vector<vector<int>>& edges) {
         const int INF = INT_MAX / 2;
 
-        vector<vector<Edge>> graph(n);
-        graph.reserve(n);
+        vector<vector<Edge>> g(n), rg(n);
 
-        for (const auto &e : edges) {
+        for (auto &e : edges) {
             int u = e[0], v = e[1], w = e[2];
-            graph[u].push_back({v, w});
-            graph[v].push_back({u, w << 1});  // w * 2 (bit shift faster)
+            g[u].push_back({v, w});
+            g[v].push_back({u, w << 1});
+
+            // reverse graph
+            rg[v].push_back({u, w});
+            rg[u].push_back({v, w << 1});
         }
 
-        vector<int> dist(n, INF);
-        dist[0] = 0;
+        vector<int> distF(n, INF), distB(n, INF);
+        priority_queue<Node, vector<Node>, greater<Node>> pqF, pqB;
 
-        priority_queue<Node, vector<Node>, greater<Node>> pq;
-        pq.push({0, 0});
+        distF[0] = 0;
+        distB[n - 1] = 0;
 
-        while (!pq.empty()) {
-            Node cur = pq.top();
-            pq.pop();
+        pqF.push({0, 0});
+        pqB.push({0, n - 1});
 
-            int d = cur.dist;
-            int u = cur.v;
+        int ans = INF;
 
-            if (d != dist[u]) continue;
-            if (u == n - 1) return d;
+        while (!pqF.empty() || !pqB.empty()) {
+            if (!pqF.empty()) {
+                auto [d, u] = pqF.top(); pqF.pop();
+                if (d != distF[u]) continue;
+                if (d >= ans) break;
 
-            for (const Edge &e : graph[u]) {
-                int nd = d + e.cost;
-                if (nd < dist[e.to]) {
-                    dist[e.to] = nd;
-                    pq.push({nd, e.to});
+                for (auto &e : g[u]) {
+                    int nd = d + e.cost;
+                    if (nd < distF[e.to]) {
+                        distF[e.to] = nd;
+                        pqF.push({nd, e.to});
+                        if (distB[e.to] < INF)
+                            ans = min(ans, nd + distB[e.to]);
+                    }
+                }
+            }
+
+            if (!pqB.empty()) {
+                auto [d, u] = pqB.top(); pqB.pop();
+                if (d != distB[u]) continue;
+                if (d >= ans) break;
+
+                for (auto &e : rg[u]) {
+                    int nd = d + e.cost;
+                    if (nd < distB[e.to]) {
+                        distB[e.to] = nd;
+                        pqB.push({nd, e.to});
+                        if (distF[e.to] < INF)
+                            ans = min(ans, nd + distF[e.to]);
+                    }
                 }
             }
         }
 
-        return -1;
+        return ans == INF ? -1 : ans;
     }
 };
