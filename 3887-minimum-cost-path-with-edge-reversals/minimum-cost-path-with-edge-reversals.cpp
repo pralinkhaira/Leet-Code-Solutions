@@ -1,44 +1,51 @@
 class Solution {
 public:
+    struct Edge {
+        int to;
+        int cost;
+    };
+
+    struct Node {
+        int dist;
+        int v;
+        bool operator>(const Node& other) const {
+            return dist > other.dist;
+        }
+    };
+
     int minCost(int n, vector<vector<int>>& edges) {
         const int INF = INT_MAX / 2;
 
-        vector<vector<pair<int,int>>> graph(n);
+        vector<vector<Edge>> graph(n);
+        graph.reserve(n);
+
         for (const auto &e : edges) {
             int u = e[0], v = e[1], w = e[2];
-            graph[u].emplace_back(v, w);
-            graph[v].emplace_back(u, w * 2);
+            graph[u].push_back({v, w});
+            graph[v].push_back({u, w << 1});  // w * 2 (bit shift faster)
         }
 
         vector<int> dist(n, INF);
         dist[0] = 0;
 
-        priority_queue<
-            pair<int,int>,
-            vector<pair<int,int>>,
-            greater<pair<int,int>>
-        > pq;
-
-        pq.emplace(0, 0);
+        priority_queue<Node, vector<Node>, greater<Node>> pq;
+        pq.push({0, 0});
 
         while (!pq.empty()) {
-            auto [d, node] = pq.top();
+            Node cur = pq.top();
             pq.pop();
 
-            // Skip outdated state
-            if (d != dist[node]) continue;
+            int d = cur.dist;
+            int u = cur.v;
 
-            // Early exit: shortest path to destination found
-            if (node == n - 1) return d;
+            if (d != dist[u]) continue;
+            if (u == n - 1) return d;
 
-            for (const auto &edge : graph[node]) {
-                int next = edge.first;
-                int cost = edge.second;
-
-                int newDist = d + cost;
-                if (newDist < dist[next]) {
-                    dist[next] = newDist;
-                    pq.emplace(newDist, next);
+            for (const Edge &e : graph[u]) {
+                int nd = d + e.cost;
+                if (nd < dist[e.to]) {
+                    dist[e.to] = nd;
+                    pq.push({nd, e.to});
                 }
             }
         }
